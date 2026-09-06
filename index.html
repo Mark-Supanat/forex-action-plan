@@ -429,8 +429,9 @@ body::before{
    (scoped to #page-analytics only, doesn't affect other pages)
    ============================================ */
 #page-analytics{
+  --text3:#96a1b8; /* override dim global --text3 (#374869) — invisible on the new dark cards */
   --an2-bg:#0b1220; --an2-card:#141d2e; --an2-border:#1e2740;
-  --an2-text:#e6ebf5; --an2-text2:#8a94a6; --an2-text3:#6b7688;
+  --an2-text:#e6ebf5; --an2-text2:#8a94a6; --an2-text3:#6b7688; --an2-label:#aab4c8;
   --an2-accent:#f5a623; --an2-accent-fg:#3a2400;
   --an2-good-bg:#1e6f5c; --an2-good-fg:#7ee6c4;
   --an2-warn-bg:#5a4a1e; --an2-warn-fg:#f5c56a;
@@ -446,8 +447,8 @@ body::before{
 }
 #page-analytics .dash-widget::after,
 #page-analytics .an-kpi-card::after{display:none !important}
-#page-analytics .dash-widget-title{color:var(--an2-text3)}
-#page-analytics .an-kpi-label{color:var(--an2-text3)}
+#page-analytics .dash-widget-title{color:var(--an2-label)}
+#page-analytics .an-kpi-label{color:var(--an2-label)}
 #page-analytics .an-kpi-accent{display:none}
 
 .an2-tabbar{display:flex;gap:4px;margin:14px 0 14px;border-bottom:1px solid var(--an2-border);flex-wrap:wrap}
@@ -457,7 +458,7 @@ body::before{
 .an2-tab-disabled{color:#3a4258;cursor:not-allowed;padding:9px 16px;font-size:12px}
 
 .an2-chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.an2-chip-label{font-size:10px;letter-spacing:.08em;color:var(--an2-text3);text-transform:uppercase;margin-bottom:6px;display:block}
+.an2-chip-label{font-size:10px;letter-spacing:.08em;color:var(--an2-label);text-transform:uppercase;margin-bottom:6px;display:block;font-weight:600}
 .an2-chip{padding:5px 12px;border-radius:14px;font-size:11px;border:none;background:var(--an2-muted-bg);color:var(--an2-text2);cursor:pointer;font-weight:500;font-family:var(--font-body);white-space:nowrap}
 .an2-chip.active{background:var(--an2-accent);color:var(--an2-accent-fg);font-weight:600}
 .an2-chip-sym.active{background:var(--an2-sym-bg);color:var(--an2-sym-fg)}
@@ -465,7 +466,7 @@ body::before{
 .an2-card{background:var(--an2-card);border-radius:10px;padding:14px}
 .an2-insight{background:var(--an2-good-bg);color:var(--an2-good-fg);border-radius:10px;padding:10px 12px;font-size:12px;margin-bottom:14px}
 .an2-heat-table{width:100%;border-collapse:collapse;font-size:12px;color:var(--an2-text)}
-.an2-heat-table th{padding:4px 6px;color:var(--an2-text3);font-weight:500;text-align:center}
+.an2-heat-table th{padding:4px 6px;color:var(--an2-label);font-weight:600;text-align:center}
 .an2-heat-table th:first-child{text-align:left}
 .an2-heat-table td{padding:6px}
 .an2-heat-cell{border-radius:6px;padding:5px 4px;text-align:center}
@@ -477,7 +478,7 @@ body::before{
 .an2-rank-label{flex:1;min-width:90px;font-size:13px;font-weight:600;color:var(--an2-text)}
 .an2-rank-sample{font-size:10px;color:var(--an2-warn-fg)}
 .an2-rank-stat{text-align:right;min-width:55px}
-.an2-rank-stat-label{font-size:10px;color:var(--an2-text3)}
+.an2-rank-stat-label{font-size:10px;color:var(--an2-label)}
 .an2-rank-stat-value{font-size:13px;font-weight:600;color:var(--an2-text)}
 
 /* ===== JOURNAL PAGE ===== */
@@ -1675,45 +1676,6 @@ select.field-sm option{background:#111827;color:var(--text)}
   <div class="page" id="page-analytics">
     <div class="page-inner">
 
-      <!-- THIS WEEK SUMMARY -->
-      <div class="dash-widget" style="margin-bottom:14px;padding:20px 22px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-          <div class="dash-widget-title" style="margin-bottom:0;font-size:12px">📅 สรุปสัปดาห์นี้ — <span id="weekRangeLabel">—</span></div>
-          <div id="weekTradeCount" style="font-family:var(--font-mono);font-size:11px;color:var(--text2)">—</div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
-          <div style="text-align:center;padding:10px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08)">
-            <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin-bottom:4px">Trades</div>
-            <div id="weekTotalTrades" style="font-family:var(--font-display);font-weight:700;font-size:26px">—</div>
-          </div>
-          <div style="text-align:center;padding:10px;border-radius:12px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15)">
-            <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin-bottom:4px">Win Rate</div>
-            <div id="weekWinRate" style="font-family:var(--font-display);font-weight:700;font-size:26px;color:#34d399">—</div>
-          </div>
-          <div style="text-align:center;padding:10px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08)">
-            <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin-bottom:4px">W / L</div>
-            <div id="weekWL" style="font-family:var(--font-display);font-weight:700;font-size:26px">—</div>
-          </div>
-        </div>
-
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-          <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;color:var(--text3);text-transform:uppercase">Grade</span>
-          <div id="weekGradeBreakdown" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-        </div>
-
-        <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin-bottom:8px">Symbol Breakdown</div>
-        <div id="weekSymbolTable" style="display:flex;flex-direction:column;gap:6px"></div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;margin-bottom:8px">
-          <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;color:var(--text3);text-transform:uppercase">Trade Detail</span>
-          <div style="display:flex;gap:6px">
-            <button class="btn-save" onclick="exportThisWeekCSV()" style="font-size:10px;padding:4px 10px">⬇ CSV</button>
-            <button class="btn-save" onclick="exportThisWeekJSON()" style="font-size:10px;padding:4px 10px">⬇ JSON</button>
-          </div>
-        </div>
-        <div id="weekTradeCards" style="display:flex;flex-direction:column;gap:6px"></div>
-      </div>
-
       <!-- CONTROLS -->
       <div style="margin-bottom:14px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
@@ -1724,12 +1686,54 @@ select.field-sm option{background:#111827;color:var(--text)}
             <button class="an-tab" id="an-tab-q2" onclick="setAnQuarter('q2',this)">Q2</button>
             <button class="an-tab active" id="an-tab-q3" onclick="setAnQuarter('q3',this)">Q3</button>
             <button class="an-tab" id="an-tab-q4" onclick="setAnQuarter('q4',this)">Q4</button>
+            <button class="an-tab" id="btnToggleWeek" onclick="toggleWeekSummary()">📅 สรุปสัปดาห์นี้ ▾</button>
           </div>
           <button class="btn-save" id="anRefreshBtn" onclick="loadAnalytics()" style="font-size:11px;padding:5px 14px">🔄 Refresh</button>
         </div>
         <!-- Symbol Filter -->
         <div id="anSymbolBar" style="display:flex;gap:5px;flex-wrap:wrap;padding:8px 12px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
           <button class="an-sym-pill active" onclick="setAnSymbol('all')">ทั้งหมด</button>
+        </div>
+
+        <!-- THIS WEEK SUMMARY (collapsed by default, opens via the button above) -->
+        <div id="weekSummaryPanel" style="display:none;margin-top:14px">
+          <div class="dash-widget" style="padding:20px 22px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+              <div class="dash-widget-title" style="margin-bottom:0;font-size:12px">📅 สรุปสัปดาห์นี้ — <span id="weekRangeLabel">—</span></div>
+              <div id="weekTradeCount" style="font-family:var(--font-mono);font-size:11px;color:var(--text2)">—</div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+              <div style="text-align:center;padding:10px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08)">
+                <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin-bottom:4px">Trades</div>
+                <div id="weekTotalTrades" style="font-family:var(--font-display);font-weight:700;font-size:26px">—</div>
+              </div>
+              <div style="text-align:center;padding:10px;border-radius:12px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15)">
+                <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin-bottom:4px">Win Rate</div>
+                <div id="weekWinRate" style="font-family:var(--font-display);font-weight:700;font-size:26px;color:#34d399">—</div>
+              </div>
+              <div style="text-align:center;padding:10px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08)">
+                <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin-bottom:4px">W / L</div>
+                <div id="weekWL" style="font-family:var(--font-display);font-weight:700;font-size:26px">—</div>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+              <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;color:var(--text3);text-transform:uppercase">Grade</span>
+              <div id="weekGradeBreakdown" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+            </div>
+
+            <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin-bottom:8px">Symbol Breakdown</div>
+            <div id="weekSymbolTable" style="display:flex;flex-direction:column;gap:6px"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;margin-bottom:8px">
+              <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;color:var(--text3);text-transform:uppercase">Trade Detail</span>
+              <div style="display:flex;gap:6px">
+                <button class="btn-save" onclick="exportThisWeekCSV()" style="font-size:10px;padding:4px 10px">⬇ CSV</button>
+                <button class="btn-save" onclick="exportThisWeekJSON()" style="font-size:10px;padding:4px 10px">⬇ JSON</button>
+              </div>
+            </div>
+            <div id="weekTradeCards" style="display:flex;flex-direction:column;gap:6px"></div>
+          </div>
         </div>
       </div>
 
@@ -1774,7 +1778,7 @@ select.field-sm option{background:#111827;color:var(--text)}
 
         <div class="dash-widget" style="margin-top:14px">
           <div class="dash-widget-title"><span class="an-chart-icon">💹</span>Equity Curve (Cumulative P&L %)</div>
-          <canvas id="chartEquity" height="220"></canvas>
+          <canvas id="chartEquity" height="140"></canvas>
         </div>
 
         <!-- TRADE TABLE -->
@@ -2296,6 +2300,19 @@ function enrichTrade(t) {
 
 function anModelColLabel(key) { return key === 'mixed' ? 'Mixed' : 'Model ' + key.slice(1); }
 
+// เรียงสินทรัพย์ตามลำดับที่ผู้ใช้กำหนด แล้วตามด้วยตัวที่เหลือ (เรียง A-Z)
+const AN_SYMBOL_ORDER = ['XAUUSD','XAGUSD','BTCUSDT','NDX','USOIL','USDJPY'];
+function anSortSymbols(syms) {
+  return [...syms].sort((a,b) => {
+    const ia = AN_SYMBOL_ORDER.indexOf(a);
+    const ib = AN_SYMBOL_ORDER.indexOf(b);
+    if (ia !== -1 && ib !== -1) return ia - ib;
+    if (ia !== -1) return -1;
+    if (ib !== -1) return 1;
+    return a.localeCompare(b);
+  });
+}
+
 function anModelColsFromTrades(trades) {
   const keysSet = new Set(trades.map(t => t._modelKey).filter(k => k && k !== 'unknown'));
   const numeric = [...keysSet].filter(k => k.startsWith('m')).sort((a,b) => parseInt(a.slice(1)) - parseInt(b.slice(1)));
@@ -2324,7 +2341,7 @@ function anCellHtml(wr, n) {
 
 // ---- Model & Symbol tab ----
 function renderModelSymbolTab(trades) {
-  const symbols = [...new Set(trades.map(t => t.sym).filter(Boolean))].sort();
+  const symbols = anSortSymbols([...new Set(trades.map(t => t.sym).filter(Boolean))]);
   const cols = anModelColsFromTrades(trades);
 
   const headEl = document.getElementById('anModelHeatHead');
@@ -2408,7 +2425,7 @@ function renderCrossChips(trades) {
     modelBar.innerHTML = `<button class="an2-chip ${anCrossModel==='all'?'active':''}" onclick="setAnCrossModel('all')">ทั้งหมด</button>` +
       cols.map(c => `<button class="an2-chip ${anCrossModel===c?'active':''}" onclick="setAnCrossModel('${c}')">${anModelColLabel(c)}</button>`).join('');
   }
-  const symbols = [...new Set(trades.map(t => t.sym).filter(Boolean))].sort();
+  const symbols = anSortSymbols([...new Set(trades.map(t => t.sym).filter(Boolean))]);
   const symBar = document.getElementById('anCrossSymbolChips');
   if (symBar) {
     symBar.innerHTML = `<button class="an2-chip an2-chip-sym ${anCrossSymbol==='all'?'active':''}" onclick="setAnCrossSymbol('all')">ทั้งหมด</button>` +
@@ -2494,6 +2511,18 @@ function switchAnTab(tab, btn) {
   }
 }
 
+function toggleWeekSummary() {
+  const panel = document.getElementById('weekSummaryPanel');
+  const btn = document.getElementById('btnToggleWeek');
+  if (!panel) return;
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if (btn) {
+    btn.classList.toggle('active', !isOpen);
+    btn.innerHTML = isOpen ? '📅 สรุปสัปดาห์นี้ ▾' : '📅 สรุปสัปดาห์นี้ ▴';
+  }
+}
+
 function setAnQuarter(q, btn) {
   anQuarter = q;
   document.querySelectorAll('.an-tab').forEach(b => b.classList.remove('active'));
@@ -2510,7 +2539,7 @@ function renderAnalytics() {
   const trades = getFilteredTrades().map(enrichTrade);
 
   // Build symbol filter pills
-  const allSyms = [...new Set(anAllTrades.map(t=>t.sym).filter(Boolean))].sort();
+  const allSyms = anSortSymbols([...new Set(anAllTrades.map(t=>t.sym).filter(Boolean))]);
   const symBar = document.getElementById('anSymbolBar');
   if (symBar) {
     symBar.innerHTML = `<button class="an-sym-pill ${anSymbol==='all'?'active':''}" onclick="setAnSymbol('all')">ทั้งหมด</button>` +
@@ -2630,7 +2659,7 @@ function getPerfColor(winRate) {
 
 function renderSymbolChart(trades) {
   destroyChart('chartSymbol');
-  const syms = [...new Set(trades.map(t=>t.sym))].sort();
+  const syms = anSortSymbols([...new Set(trades.map(t=>t.sym))]);
   const data = syms.map(s => {
     const st = trades.filter(t=>t.sym===s);
     return parseFloat(calcWinRate(st));
@@ -2639,7 +2668,7 @@ function renderSymbolChart(trades) {
   if (!ctx) return;
   anCharts['chartSymbol'] = new Chart(ctx, {
     type:'bar',
-    data:{ labels:syms, datasets:[{ data, backgroundColor:data.map(getPerfColor), borderRadius:6, maxBarThickness:44 }] },
+    data:{ labels:syms, datasets:[{ data, backgroundColor:'#3b82f6', borderRadius:4, maxBarThickness:44 }] },
     options:{ responsive:true, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`Win Rate: ${c.raw}%`}}}, scales:{ y:{ min:0, max:100, ticks:{ color:'#6b7a9e', callback:v=>v+'%' }, grid:{ color:'#1a2236' } }, x:{ ticks:{color:'#6b7a9e'}, grid:{display:false} } } }
   });
 }
@@ -2732,8 +2761,9 @@ function renderEquityChart(trades) {
   anCharts['chartEquity'] = new Chart(ctx, {
     type:'line',
     data:{ labels, datasets:[{
-      data:points, borderColor: isUp ? '#34d399' : '#f43f5e', backgroundColor: isUp ? 'rgba(52,211,153,.1)' : 'rgba(244,63,94,.1)',
-      borderWidth:2, pointRadius:0, tension:.25, fill:true,
+      data:points, borderColor: isUp ? '#34d399' : '#f43f5e', backgroundColor: isUp ? 'rgba(52,211,153,.08)' : 'rgba(244,63,94,.08)',
+      borderWidth:1.75, pointRadius:0, pointHoverRadius:4, pointHitRadius:8,
+      pointBackgroundColor: isUp ? '#34d399' : '#f43f5e', tension:0, fill:true,
     }] },
     options:{ responsive:true,
       plugins:{legend:{display:false},tooltip:{callbacks:{
