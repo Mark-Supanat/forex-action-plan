@@ -430,6 +430,10 @@ body::before{
    ============================================ */
 #page-analytics{
   --text3:#96a1b8; /* override dim global --text3 (#374869) — invisible on the new dark cards */
+  --jn-accent:#2dd4bf;--jn-accent2:#5eead4;--jn-accent-dark:#0f766e;
+  --jn-panel2:#151a26;
+  --jn-border:#232c40;--jn-border2:#334160;
+  --jn-text:#f3f5f9;--jn-text-dim:#9aa7c4;
   --an2-bg:#0b1220; --an2-card:#141d2e; --an2-border:#1e2740;
   --an2-text:#e6ebf5; --an2-text2:#8a94a6; --an2-text3:#6b7688; --an2-label:#aab4c8;
   --an2-accent:#f5a623; --an2-accent-fg:#3a2400;
@@ -1757,37 +1761,42 @@ select.field-sm option{background:#111827;color:var(--text)}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
           <div class="dash-widget an-chart-widget">
             <div class="dash-widget-title"><span class="an-chart-icon">🎯</span>Win Rate by Symbol</div>
-            <canvas id="chartSymbol" height="220"></canvas>
+            <div style="height:170px;position:relative"><canvas id="chartSymbol"></canvas></div>
           </div>
           <div class="dash-widget an-chart-widget">
             <div class="dash-widget-title"><span class="an-chart-icon">🏅</span>Grade Distribution</div>
-            <canvas id="chartGrade" height="220"></canvas>
+            <div style="height:170px;position:relative"><canvas id="chartGrade"></canvas></div>
           </div>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
           <div class="dash-widget an-chart-widget">
             <div class="dash-widget-title"><span class="an-chart-icon">📈</span>Monthly P&L (%)</div>
-            <canvas id="chartMonthly" height="220"></canvas>
+            <div style="height:170px;position:relative"><canvas id="chartMonthly"></canvas></div>
           </div>
           <div class="dash-widget an-chart-widget">
             <div class="dash-widget-title"><span class="an-chart-icon">🎖️</span>Win Rate by Grade</div>
-            <canvas id="chartWinByGrade" height="220"></canvas>
+            <div style="height:170px;position:relative"><canvas id="chartWinByGrade"></canvas></div>
           </div>
         </div>
 
         <div class="dash-widget" style="margin-top:14px">
           <div class="dash-widget-title"><span class="an-chart-icon">💹</span>Equity Curve (Cumulative P&L %)</div>
-          <div style="height:160px;position:relative">
+          <div style="height:210px;position:relative">
             <canvas id="chartEquity"></canvas>
           </div>
         </div>
 
-        <!-- TRADES TO REVIEW -->
-        <div class="dash-widget" style="margin-top:14px">
-          <div class="dash-widget-title">⚠️ เทรดที่ควรทบทวน</div>
-          <div style="font-size:11px;color:var(--an2-text3);margin-bottom:10px">ยัง Open · Grade C · หรือขาดทุนหนัก (≤-3%) — เรียง Open ก่อน แล้วขาดทุนมากสุดก่อน</div>
-          <div id="anReviewList" class="an2-card" style="padding:4px 14px"></div>
+        <!-- BEST / WORST TRADES -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+          <div class="dash-widget">
+            <div class="dash-widget-title">🏆 Best Trades</div>
+            <div id="anBestList" style="display:flex;flex-direction:column;gap:10px"></div>
+          </div>
+          <div class="dash-widget">
+            <div class="dash-widget-title">🔻 Worst Trades</div>
+            <div id="anWorstList" style="display:flex;flex-direction:column;gap:10px"></div>
+          </div>
         </div>
       </div>
 
@@ -2549,7 +2558,7 @@ function renderAnalytics() {
   renderMonthlyChart(trades);
   renderWinByGradeChart(trades);
   renderEquityChart(trades);
-  renderReviewTrades(trades);
+  renderBestWorstTrades(trades);
   renderModelSymbolTab(trades);
   renderCrossTabs(trades);
 }
@@ -2662,7 +2671,7 @@ function renderSymbolChart(trades) {
   anCharts['chartSymbol'] = new Chart(ctx, {
     type:'bar',
     data:{ labels:syms, datasets:[{ data, backgroundColor:'#3b82f6', borderRadius:4, maxBarThickness:44 }] },
-    options:{ responsive:true, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`Win Rate: ${c.raw}%`}}}, scales:{ y:{ min:0, max:100, ticks:{ color:'#6b7a9e', callback:v=>v+'%' }, grid:{ color:'#1a2236' } }, x:{ ticks:{color:'#6b7a9e'}, grid:{display:false} } } }
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`Win Rate: ${c.raw}%`}}}, scales:{ y:{ min:0, max:100, ticks:{ color:'#6b7a9e', callback:v=>v+'%' }, grid:{ color:'#1a2236' } }, x:{ ticks:{color:'#6b7a9e'}, grid:{display:false} } } }
   });
 }
 
@@ -2691,7 +2700,7 @@ function renderGradeChart(trades) {
   anCharts['chartGrade'] = new Chart(ctx, {
     type:'doughnut',
     data:{ labels:grades, datasets:[{ data, backgroundColor:['#10b981','#f0b429','#f43f5e'], borderWidth:0 }] },
-    options:{ responsive:true, cutout:'62%', plugins:{ legend:{ position:'bottom', labels:{ color:'#6b7a9e', padding:12 } } } }
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{ legend:{ position:'bottom', labels:{ color:'#6b7a9e', padding:12 } } } }
   });
 }
 
@@ -2712,7 +2721,7 @@ function renderMonthlyChart(trades) {
   anCharts['chartMonthly'] = new Chart(ctx, {
     type:'bar',
     data:{ labels, datasets:[{ data, backgroundColor: data.map(v => v>=0 ? '#10b981' : '#f43f5e'), borderRadius:6, maxBarThickness:44 }] },
-    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ color:'#6b7a9e', callback:v=>v+'%' }, grid:{ color:'#1a2236' } }, x:{ ticks:{color:'#6b7a9e',maxRotation:45}, grid:{display:false} } } }
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ color:'#6b7a9e', callback:v=>v+'%' }, grid:{ color:'#1a2236' } }, x:{ ticks:{color:'#6b7a9e',maxRotation:45}, grid:{display:false} } } }
   });
 }
 
@@ -2729,7 +2738,7 @@ function renderWinByGradeChart(trades) {
   anCharts['chartWinByGrade'] = new Chart(ctx, {
     type:'bar',
     data:{ labels:grades, datasets:[{ data, backgroundColor:['#10b981','#f0b429','#f43f5e'], borderRadius:6, maxBarThickness:70 }] },
-    options:{ responsive:true,
+    options:{ responsive:true, maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{
         label:c=>`Win Rate: ${c.raw}%`,
         afterLabel:c=>`(${counts[c.dataIndex]} เทรด)`
@@ -2770,45 +2779,85 @@ function renderEquityChart(trades) {
   });
 }
 
-function renderReviewTrades(trades) {
-  const container = document.getElementById('anReviewList');
-  if (!container) return;
+// สร้าง trade card แบบเดียวกับหน้า Journal (มี Grade, Session, Entry/Exit reason, Risk, TF, ลิงก์ chart ครบ)
+// ใช้ค่าสี --jn-* ที่ประกาศไว้ใน #page-analytics แล้ว จึงหน้าตาตรงกับ Journal ทุกประการ
+function anBuildTradeCardHtml(t) {
+  const isOpen = !t.wl || t.wl === '';
+  const pnlUsd = parseFloat(t.pnlUsd) || 0;
+  const pnlColor = pnlUsd > 0 ? 'var(--green)' : pnlUsd < 0 ? 'var(--red)' : 'var(--jn-text-dim)';
+  const gradeColorOf = g => g==='A' ? '#eab308' : g==='B' ? '#f97316' : g==='C' ? '#ef4444' : 'var(--jn-text-dim)';
+  const resultGradeColorOf = g => {
+    if (!g || g==='—') return 'var(--jn-text-dim)';
+    if (g === 'B+') return 'var(--green)';
+    if (g === 'B-') return '#ef4444';
+    if (g.startsWith('A')) return '#eab308';
+    if (g.startsWith('B')) return '#f97316';
+    if (g.startsWith('C')) return '#ef4444';
+    return 'var(--jn-text-dim)';
+  };
+  const entryGrade = t.grade || '—';
+  const resultGrade = t.gradeFinal || '—';
+  const entryGradeColor = gradeColorOf(entryGrade);
+  const resultGradeColor = resultGradeColorOf(resultGrade);
+  const tpslVal = (t.tpsl||'').toUpperCase();
+  const tpslClass = tpslVal==='TP' ? 'an-pill-win' : tpslVal==='SL' ? 'an-pill-loss' : '';
+  const wlAccent = isOpen ? '#fbbf24' : t.wl==='W' ? 'var(--green)' : t.wl==='L' ? 'var(--red)' : 'var(--jn-accent)';
+  const wlAccentBg = isOpen ? 'rgba(251,191,36,.1)' : t.wl==='W' ? 'rgba(52,211,153,.1)' : t.wl==='L' ? 'rgba(244,63,94,.1)' : 'rgba(45,212,191,.1)';
+  const posVal = (t.pos||'').toUpperCase();
+  const posDisplay = posVal.startsWith('L') ? 'Long' : posVal.startsWith('S') ? 'Short' : (t.pos || '—');
+  const posColor = posVal.startsWith('L') ? 'var(--green)' : posVal.startsWith('S') ? 'var(--red)' : 'var(--jn-text)';
+  const exitTypeColor = tpslVal==='TP' ? 'var(--green)' : tpslVal==='SL' ? 'var(--red)' : 'var(--jn-text)';
+  const fmtDT = raw => {
+    const dd = jnCleanDate(raw);
+    if (!dd) return '—';
+    return dd.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  };
+  const entryInfo = extractEntryPlanInfo(t.entryPlan);
+  const links = [];
+  if (t.chartEnter) links.push(`<a href="${t.chartEnter}" target="_blank" rel="noopener">🖼 Chart Enter</a>`);
+  if (t.chartExit) links.push(`<a href="${t.chartExit}" target="_blank" rel="noopener">🖼 Chart Exit</a>`);
+  const fields = [
+    ['Position', posDisplay, posColor], ['Lot Size', t.lot, null], ['Order', t.order, null], ['Session', t.session, null],
+    ['Entry Date', fmtDT(t.dateOpen), null], ['Entry', t.enter, null],
+    ['Exit Date', isOpen ? '—' : fmtDT(t.dateClose), null], ['Exit', isOpen ? '—' : t.exit, null],
+    ['Duration', t.dur, '#fb923c'], ['Exit Type', isOpen ? 'Open' : t.tpsl, isOpen ? '#fbbf24' : exitTypeColor],
+    ['Result Grade', resultGrade, resultGradeColor],
+    ['RRR', t.rrr, null], ['SL %', t.slPct, null], ['TP %', t.tpPct, null],
+  ];
+  return `<div class="jn-trade-card">
+    <div class="jn-tc-head">
+      <span class="jn-tc-sym">${t.sym||'—'}</span>
+      ${isOpen
+        ? `<span class="an-pill" style="background:rgba(251,191,36,.18);color:#fbbf24">OPEN</span>`
+        : (tpslVal ? `<span class="an-pill ${tpslClass}">${tpslVal}</span>` : '')}
+      <span class="jn-tc-pnl" style="color:${isOpen?'#fbbf24':pnlColor}">${isOpen ? '🟡 Position Open' : `${pnlUsd>=0?'+':'-'}$${Math.abs(pnlUsd).toFixed(2)} (${parseFloat(t.pnlPct||0)>=0?'+':''}${parseFloat(t.pnlPct||0).toFixed(2)}%)`}</span>
+    </div>
+    ${t.setup ? `<div class="jn-tc-setup" style="border-left-color:${wlAccent};background:${wlAccentBg}">🎯 ${t.setup}${entryGrade!=='—' ? ` <span style="color:${entryGradeColor};font-weight:800">· Grade ${entryGrade}</span>` : ''}${entryInfo.tf ? ` <span style="color:var(--jn-accent2);font-weight:700">· TF: ${entryInfo.tf}</span>` : ''}</div>` : ''}
+    <div class="jn-tc-grid">
+      ${fields.map(([label,val,color]) => `<div class="jn-tc-field"><label>${label}</label><div${color?` style="color:${color}"`:''}>${val||'—'}</div></div>`).join('')}
+    </div>
+    ${entryInfo.reason ? `<div class="jn-tc-entryplan">📥 Entry reason: ${entryInfo.reason}</div>` : ''}
+    ${entryInfo.risk ? `<div class="jn-tc-risk">⚠️ Risk: ${entryInfo.risk}</div>` : ''}
+    ${t.exitExecution ? `<div class="jn-tc-exit-reason">🚪 Exit reason: ${t.exitExecution}</div>` : ''}
+    ${t.note ? `<div class="jn-tc-note">📝 ${t.note}</div>` : ''}
+    ${links.length ? `<div class="jn-tc-links">${links.join('')}</div>` : ''}
+  </div>`;
+}
 
-  const flagged = trades.map(t => {
-    const pnl = parseFloat(t.pnlPct) || 0;
-    const grade = t.gradeFinal || t.grade || '';
-    const isOpen = !t.wl || t.wl === '';
-    const reasons = [];
-    if (isOpen) reasons.push('ยัง Open');
-    if (grade === 'C') reasons.push('Grade C');
-    if (!isOpen && pnl <= -3) reasons.push('ขาดทุนหนัก');
-    return { t, pnl, isOpen, reasons };
-  }).filter(x => x.reasons.length > 0);
+function renderBestWorstTrades(trades) {
+  const bestEl = document.getElementById('anBestList');
+  const worstEl = document.getElementById('anWorstList');
+  if (!bestEl || !worstEl) return;
 
-  flagged.sort((a,b) => {
-    if (a.isOpen !== b.isOpen) return a.isOpen ? -1 : 1;
-    return a.pnl - b.pnl;
-  });
+  // จัดอันดับจาก PnL จริง (USD) เฉพาะเทรดที่ปิดแล้ว (ตัด Open ออกเพราะยังไม่รู้ผลจริง)
+  const decided = trades.filter(t => t.wl === 'W' || t.wl === 'L');
+  const byPnl = [...decided].sort((a,b) => (parseFloat(b.pnlUsd)||0) - (parseFloat(a.pnlUsd)||0));
 
-  const top = flagged.slice(0, 12);
-  if (!top.length) {
-    container.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:var(--an2-text3)">ไม่มีเทรดที่ต้องทบทวนตอนนี้ 🎉</div>';
-    return;
-  }
+  const best = byPnl.slice(0, 3);
+  const worst = byPnl.slice(-3).reverse();
 
-  container.innerHTML = top.map(({t, pnl, reasons}) => {
-    const dateStr = t.dateOpen ? new Date(t.dateOpen).toLocaleDateString('th-TH',{day:'2-digit',month:'short'}) : '—';
-    const posColor = t.pos === 'BUY' ? '#34d399' : '#f87171';
-    const pnlColor = pnl >= 0 ? '#34d399' : '#f87171';
-    const tagsHtml = reasons.map(r => `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--an2-warn-bg);color:var(--an2-warn-fg);white-space:nowrap">${r}</span>`).join('');
-    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--an2-border);flex-wrap:wrap">
-      <div style="min-width:55px;font-size:11px;color:var(--an2-text3);font-family:var(--font-mono)">${dateStr}</div>
-      <div style="min-width:75px;font-weight:700;font-size:13px;color:var(--an2-text)">${t.sym||'—'}</div>
-      <div style="min-width:36px;font-size:11px;color:${posColor};font-weight:600">${t.pos||'—'}</div>
-      <div style="flex:1;display:flex;gap:4px;flex-wrap:wrap;min-width:120px">${tagsHtml}</div>
-      <div style="min-width:55px;text-align:right;font-weight:700;font-size:13px;color:${pnlColor}">${pnl>0?'+':''}${pnl.toFixed(1)}%</div>
-    </div>`;
-  }).join('');
+  bestEl.innerHTML = best.length ? best.map(anBuildTradeCardHtml).join('') : '<div style="padding:16px;text-align:center;font-size:12px;color:var(--an2-text3)">ยังไม่มีข้อมูลพอ</div>';
+  worstEl.innerHTML = worst.length ? worst.map(anBuildTradeCardHtml).join('') : '<div style="padding:16px;text-align:center;font-size:12px;color:var(--an2-text3)">ยังไม่มีข้อมูลพอ</div>';
 }
 
 // ============================================
