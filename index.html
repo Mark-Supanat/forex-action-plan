@@ -1803,6 +1803,11 @@ select.field-sm option{background:#111827;color:var(--text)}
       <!-- ===== TAB: MODEL & SYMBOL ===== -->
       <div id="anView-model" style="display:none">
         <div id="anModelBestCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px"></div>
+        <div style="display:flex;gap:14px;margin-bottom:10px;font-size:11px;color:var(--an2-text3);flex-wrap:wrap">
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#14361f;margin-right:5px;vertical-align:-1px"></span>กำไรรวม (▲)</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#3b1616;margin-right:5px;vertical-align:-1px"></span>ขาดทุนรวม (▼)</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#252c3d;margin-right:5px;vertical-align:-1px"></span>ตัวอย่างน้อยกว่า 5 เทรด (ยังสรุปไม่ได้)</span>
+        </div>
         <div class="an2-card">
           <table class="an2-heat-table">
             <thead><tr id="anModelHeatHead"></tr></thead>
@@ -1810,7 +1815,7 @@ select.field-sm option{background:#111827;color:var(--text)}
           </table>
         </div>
         <div style="font-size:11px;color:var(--an2-text3);margin-top:10px">
-          เทรดที่มีมากกว่า 1 Model ถูกจัดเป็น "Mixed" แยกต่างหาก ไม่นับรวมกับ Model เดี่ยว · ช่อง n&lt;5 หมายถึง sample ยังน้อย
+          ตัวเลขในแต่ละช่องคือ <b>กำไร/ขาดทุนรวมเป็นเงินจริง ($)</b> ของ Model นั้นบน Symbol นั้น — เทรดที่พูดถึงมากกว่า 1 Model แยกคอลัมน์ตามคอมโบจริง (เช่น "Model 1+3") ไม่ปนกับ Model เดี่ยว · เทรดที่ไม่มีคำว่า Model เลยอยู่ในคอลัมน์ "No Model"
         </div>
       </div>
 
@@ -2234,19 +2239,19 @@ function extractEntryPlanInfo(raw) {
   return { tf, reason, risk };
 }
 
-// แยกข้อความ setup ออกเป็น primaryModel / approach (Follow-Reversal) / isMixed (พูดถึงมากกว่า 1 Model)
+// แยกข้อความ setup ออกเป็น primaryModel / approach (Follow-Reversal) / modelKey
+// modelKey: 'm1' (เดี่ยว) / 'm1_3' (คอมโบ Model 1+3 เรียงเลขจากน้อยไปมาก) / 'none' (ไม่มีคำว่า Model เลย)
 function parseModelInfo(setupRaw) {
   const text = (setupRaw || '').trim();
-  if (!text) return { primaryModel: null, approach: null, isMixed: false, modelKey: 'unknown' };
-  const modelMatches = [...text.matchAll(/model\s*(\d+)/gi)].map(m => m[1]);
-  const uniqueModels = [...new Set(modelMatches)];
-  const isMixed = uniqueModels.length > 1;
-  const primaryModel = uniqueModels.length ? uniqueModels[0] : null;
+  const modelMatches = text ? [...text.matchAll(/model\s*(\d+)/gi)].map(m => parseInt(m[1])) : [];
+  const uniqueModels = [...new Set(modelMatches)].sort((a,b) => a-b);
   let approach = null;
   if (/reversal/i.test(text)) approach = 'Reversal';
   else if (/follow/i.test(text)) approach = 'Follow';
-  const modelKey = isMixed ? 'mixed' : (primaryModel ? 'm' + primaryModel : 'unknown');
-  return { primaryModel, approach, isMixed, modelKey, modelsFound: uniqueModels };
+  if (!uniqueModels.length) return { primaryModel: null, approach, isMixed: false, modelKey: 'none', modelsFound: [] };
+  const isMixed = uniqueModels.length > 1;
+  const modelKey = 'm' + uniqueModels.join('_');
+  return { primaryModel: uniqueModels[0], approach, isMixed, modelKey, modelsFound: uniqueModels };
 }
 
 // รวมเวลาถือ (dur) เป็นนาที รองรับหลายหน่วยปนกัน เช่น "1d 3h", "45m", "2 ชม.", ตัวเลขเปล่าถือเป็นชั่วโมง
@@ -2292,7 +2297,11 @@ function enrichTrade(t) {
   return t;
 }
 
-function anModelColLabel(key) { return key === 'mixed' ? 'Mixed' : 'Model ' + key.slice(1); }
+function anModelColLabel(key) {
+  if (key === 'none') return 'No Model';
+  const nums = key.slice(1).split('_');
+  return nums.length > 1 ? 'Model ' + nums.join('+') : 'Model ' + nums[0];
+}
 
 // รวมสัญลักษณ์ที่พิมพ์ผิด/ซ้ำกันให้เหลืออันเดียว (เช่น XAUUUSD ที่พิมพ์เกิน U มาเป็น XAUUSD)
 const AN_SYMBOL_ALIASES = { 'XAUUUSD': 'XAUUSD' };
@@ -2315,10 +2324,25 @@ function anSortSymbols(syms) {
   });
 }
 
+// Model เดี่ยวก่อน (1,2,3...) แล้วตามด้วยคอมโบ (1+3, 1+4...) แล้ว No Model อยู่ท้ายสุดเสมอ
 function anModelColsFromTrades(trades) {
-  const keysSet = new Set(trades.map(t => t._modelKey).filter(k => k && k !== 'unknown'));
-  const numeric = [...keysSet].filter(k => k.startsWith('m')).sort((a,b) => parseInt(a.slice(1)) - parseInt(b.slice(1)));
-  return keysSet.has('mixed') ? [...numeric, 'mixed'] : numeric;
+  const keysSet = new Set(trades.map(t => t._modelKey).filter(Boolean));
+  const singles = [...keysSet].filter(k => k !== 'none' && !k.includes('_'))
+    .sort((a,b) => parseInt(a.slice(1)) - parseInt(b.slice(1)));
+  const combos = [...keysSet].filter(k => k.includes('_')).sort((a,b) => {
+    const an = a.slice(1).split('_').map(Number);
+    const bn = b.slice(1).split('_').map(Number);
+    return (an[0]-bn[0]) || ((an[1]||0)-(bn[1]||0));
+  });
+  const cols = [...singles, ...combos];
+  if (keysSet.has('none')) cols.push('none');
+  return cols;
+}
+
+// PnL รวมเป็นเงินจริง ($) — ใช้เป็นตัวชี้วัดหลักแทน Win Rate%
+function anPnlStat(trades) {
+  const pnl = trades.reduce((s,t) => s + (parseFloat(t.pnlUsd) || 0), 0);
+  return { pnl: Math.round(pnl), n: trades.length };
 }
 
 function anWinRate(trades) {
@@ -2327,18 +2351,20 @@ function anWinRate(trades) {
   return { wr, n: trades.length };
 }
 
-function anCellColor(wr, n) {
+// สี heatmap: เขียว/แดงเข้มขึ้นแยกง่าย + ตัวอย่างน้อยแยกเป็นสีเทา (ไม่ปนกับเหลืองกึ่งกลางที่งงง่าย)
+function anCellColor(pnl, n) {
   if (n === 0) return { bg: 'var(--an2-muted-bg)', fg: 'var(--an2-muted-fg)' };
-  if (n < 5) return { bg: 'var(--an2-warn-bg)', fg: 'var(--an2-warn-fg)' };
-  if (wr >= 60) return { bg: 'var(--an2-good-bg)', fg: 'var(--an2-good-fg)' };
-  if (wr >= 45) return { bg: 'var(--an2-warn-bg)', fg: 'var(--an2-warn-fg)' };
-  return { bg: 'var(--an2-bad-bg)', fg: 'var(--an2-bad-fg)' };
+  if (n < 5) return { bg: '#252c3d', fg: '#9aa7bd' };
+  if (pnl >= 0) return { bg: '#14361f', fg: '#4ade80' };
+  return { bg: '#3b1616', fg: '#f87171' };
 }
 
-function anCellHtml(wr, n) {
+function anCellHtml(pnl, n) {
   if (n === 0) return '<span style="color:var(--an2-text3)">—</span>';
-  const c = anCellColor(wr, n);
-  return `<div class="an2-heat-cell" style="background:${c.bg};color:${c.fg}"><div class="wr">${wr}%</div><div class="n">n=${n}</div></div>`;
+  const c = anCellColor(pnl, n);
+  const arrow = n < 5 ? '' : (pnl >= 0 ? '▲ ' : '▼ ');
+  const lowTag = n < 5 ? ' · ตัวอย่างน้อย' : '';
+  return `<div class="an2-heat-cell" style="background:${c.bg};color:${c.fg}"><div class="wr">${arrow}${pnl>=0?'+':'-'}$${Math.abs(pnl)}</div><div class="n">${n} เทรด${lowTag}</div></div>`;
 }
 
 // ---- Model & Symbol tab ----
@@ -2354,28 +2380,28 @@ function renderModelSymbolTab(trades) {
   bodyEl.innerHTML = symbols.map(sym => {
     const cells = cols.map(col => {
       const ct = trades.filter(t => t.sym === sym && t._modelKey === col);
-      const { wr, n } = anWinRate(ct);
-      return `<td>${anCellHtml(wr, n)}</td>`;
+      const { pnl, n } = anPnlStat(ct);
+      return `<td>${anCellHtml(pnl, n)}</td>`;
     }).join('');
     return `<tr><td style="font-weight:600">${sym}</td>${cells}</tr>`;
   }).join('');
 
-  // Best-per-symbol cards (ต้องมี n>=3 ถึงจะกล้าสรุป)
+  // Best-per-symbol cards (ต้องมี n>=3 ถึงจะกล้าสรุป) — วัดจาก PnL รวมสูงสุด
   let cardsHtml = '';
   symbols.forEach(sym => {
     let best = null;
     cols.forEach(col => {
       const ct = trades.filter(t => t.sym === sym && t._modelKey === col);
       if (ct.length < 3) return;
-      const { wr, n } = anWinRate(ct);
-      if (!best || wr > best.wr) best = { col, wr, n };
+      const { pnl, n } = anPnlStat(ct);
+      if (!best || pnl > best.pnl) best = { col, pnl, n };
     });
     if (best) {
-      const good = best.wr >= 55;
+      const good = best.pnl >= 0;
       cardsHtml += `<div class="an2-best-card" style="background:${good ? 'var(--an2-good-bg)' : 'var(--an2-warn-bg)'}">
         <div style="font-size:10px;color:${good ? 'var(--an2-good-fg)' : 'var(--an2-warn-fg)'}">${sym} ทำได้ดีสุด</div>
         <div style="font-size:15px;font-weight:600;margin-top:2px;color:var(--an2-text)">${anModelColLabel(best.col)}</div>
-        <div style="font-size:11px;color:var(--an2-text3)">${best.wr}% WR · n=${best.n}</div>
+        <div style="font-size:11px;color:var(--an2-text3)">${best.pnl>=0?'+':''}$${best.pnl} · ${best.n} เทรด</div>
       </div>`;
     }
   });
@@ -2466,8 +2492,8 @@ function renderTfTab(trades) {
   bodyEl.innerHTML = tfList.map(tf => {
     const cells = cols.map(col => {
       const ct = filtered.filter(t => t._tf === tf && t._modelKey === col);
-      const { wr, n } = anWinRate(ct);
-      return `<td>${anCellHtml(wr, n)}</td>`;
+      const { pnl, n } = anPnlStat(ct);
+      return `<td>${anCellHtml(pnl, n)}</td>`;
     }).join('');
     return `<tr><td style="font-weight:600">${tf}</td>${cells}</tr>`;
   }).join('');
