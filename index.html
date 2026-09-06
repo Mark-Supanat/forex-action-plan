@@ -374,10 +374,10 @@ body::before{
 .dash-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 
 /* ANALYTICS */
-.an-tab{padding:5px 14px;border-radius:20px;font-size:10px;font-family:var(--font-mono);border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;font-weight:600;letter-spacing:.06em}
+.an-tab{padding:7px 18px;border-radius:20px;font-size:13px;font-family:var(--font-mono);border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;font-weight:600;letter-spacing:.03em}
 .an-tab.active{background:linear-gradient(135deg,#f0b429,#fb923c);color:#000;border-color:transparent;box-shadow:0 2px 10px rgba(240,180,41,.3)}
 .an-tab:hover:not(.active){border-color:var(--text2);color:var(--text)}
-.an-sym-pill{padding:3px 12px;border-radius:20px;font-size:10px;font-family:var(--font-mono);border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;font-weight:600;white-space:nowrap}
+.an-sym-pill{padding:6px 15px;border-radius:20px;font-size:13px;font-family:var(--font-mono);border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;font-weight:600;white-space:nowrap}
 .an-sym-pill.active{background:linear-gradient(135deg,#3b82f6,#818cf8);color:#fff;border-color:transparent;box-shadow:0 2px 10px rgba(59,130,246,.35)}
 .an-sym-pill:hover:not(.active){border-color:var(--text2);color:var(--text)}
 .an-kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
@@ -1778,32 +1778,16 @@ select.field-sm option{background:#111827;color:var(--text)}
 
         <div class="dash-widget" style="margin-top:14px">
           <div class="dash-widget-title"><span class="an-chart-icon">💹</span>Equity Curve (Cumulative P&L %)</div>
-          <canvas id="chartEquity" height="140"></canvas>
+          <div style="height:160px;position:relative">
+            <canvas id="chartEquity"></canvas>
+          </div>
         </div>
 
-        <!-- TRADE TABLE -->
+        <!-- TRADES TO REVIEW -->
         <div class="dash-widget" style="margin-top:14px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-            <div class="dash-widget-title" style="margin-bottom:0">Recent Trades</div>
-            <input id="anSearch" placeholder="ค้นหา Symbol..." style="background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:11px;padding:4px 10px;border-radius:6px;outline:none;width:160px" oninput="renderTradeTable()">
-          </div>
-          <div class="an-table-wrap" style="max-height:420px;overflow-y:auto">
-            <table id="anTradeTable" style="width:100%;border-collapse:collapse;font-size:12px;font-family:var(--font-mono)">
-              <thead>
-                <tr style="border-bottom:1px solid var(--border);color:var(--text3)">
-                  <th style="padding:8px">Date</th>
-                  <th style="padding:8px">Symbol</th>
-                  <th style="padding:8px">Pos</th>
-                  <th style="padding:8px">Session</th>
-                  <th style="padding:8px">Setup</th>
-                  <th style="padding:8px">Grade</th>
-                  <th style="padding:8px;text-align:right">P&L%</th>
-                  <th style="padding:8px">W/L</th>
-                </tr>
-              </thead>
-              <tbody id="anTradeBody"></tbody>
-            </table>
-          </div>
+          <div class="dash-widget-title">⚠️ เทรดที่ควรทบทวน</div>
+          <div style="font-size:11px;color:var(--an2-text3);margin-bottom:10px">ยัง Open · Grade C · หรือขาดทุนหนัก (≤-3%) — เรียง Open ก่อน แล้วขาดทุนมากสุดก่อน</div>
+          <div id="anReviewList" class="an2-card" style="padding:4px 14px"></div>
         </div>
       </div>
 
@@ -2009,6 +1993,7 @@ async function loadAnalytics() {
         .catch(() => [])
     ));
     anAllTrades = results.flat();
+    anAllTrades.forEach(t => { if (t.sym) t.sym = normalizeSymbol(t.sym); });
     renderThisWeekSummary();
     renderAnalytics();
   } catch(e) {
@@ -2300,6 +2285,14 @@ function enrichTrade(t) {
 
 function anModelColLabel(key) { return key === 'mixed' ? 'Mixed' : 'Model ' + key.slice(1); }
 
+// รวมสัญลักษณ์ที่พิมพ์ผิด/ซ้ำกันให้เหลืออันเดียว (เช่น XAUUUSD ที่พิมพ์เกิน U มาเป็น XAUUSD)
+const AN_SYMBOL_ALIASES = { 'XAUUUSD': 'XAUUSD' };
+function normalizeSymbol(sym) {
+  if (!sym) return sym;
+  const trimmed = String(sym).trim().toUpperCase();
+  return AN_SYMBOL_ALIASES[trimmed] || trimmed;
+}
+
 // เรียงสินทรัพย์ตามลำดับที่ผู้ใช้กำหนด แล้วตามด้วยตัวที่เหลือ (เรียง A-Z)
 const AN_SYMBOL_ORDER = ['XAUUSD','XAGUSD','BTCUSDT','NDX','USOIL','USDJPY'];
 function anSortSymbols(syms) {
@@ -2556,7 +2549,7 @@ function renderAnalytics() {
   renderMonthlyChart(trades);
   renderWinByGradeChart(trades);
   renderEquityChart(trades);
-  renderTradeTable();
+  renderReviewTrades(trades);
   renderModelSymbolTab(trades);
   renderCrossTabs(trades);
 }
@@ -2757,15 +2750,14 @@ function renderEquityChart(trades) {
   const labels = sorted.map((t,i) => i+1);
   const ctx = document.getElementById('chartEquity');
   if (!ctx) return;
-  const isUp = points.length && points[points.length-1] >= 0;
   anCharts['chartEquity'] = new Chart(ctx, {
     type:'line',
     data:{ labels, datasets:[{
-      data:points, borderColor: isUp ? '#34d399' : '#f43f5e', backgroundColor: isUp ? 'rgba(52,211,153,.08)' : 'rgba(244,63,94,.08)',
+      data:points, borderColor:'#34d399', backgroundColor:'rgba(52,211,153,.08)',
       borderWidth:1.75, pointRadius:0, pointHoverRadius:4, pointHitRadius:8,
-      pointBackgroundColor: isUp ? '#34d399' : '#f43f5e', tension:0, fill:true,
+      pointBackgroundColor:'#34d399', tension:0, fill:true,
     }] },
-    options:{ responsive:true,
+    options:{ responsive:true, maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{
         title:c=>`เทรดที่ ${c[0].label}`,
         label:c=>`สะสม: ${c.raw>=0?'+':''}${c.raw.toFixed(1)}%`
@@ -2778,37 +2770,44 @@ function renderEquityChart(trades) {
   });
 }
 
-function renderTradeTable() {
-  const search = (document.getElementById('anSearch')?.value||'').toLowerCase();
-  let trades = getFilteredTrades();
-  if (search) trades = trades.filter(t => (t.sym||'').toLowerCase().includes(search) || (t.setup||'').toLowerCase().includes(search));
-  trades = [...trades].sort((a,b) => new Date(b.dateOpen)-new Date(a.dateOpen)).slice(0,50);
+function renderReviewTrades(trades) {
+  const container = document.getElementById('anReviewList');
+  if (!container) return;
 
-  const tbody = document.getElementById('anTradeBody');
-  if (!tbody) return;
+  const flagged = trades.map(t => {
+    const pnl = parseFloat(t.pnlPct) || 0;
+    const grade = t.gradeFinal || t.grade || '';
+    const isOpen = !t.wl || t.wl === '';
+    const reasons = [];
+    if (isOpen) reasons.push('ยัง Open');
+    if (grade === 'C') reasons.push('Grade C');
+    if (!isOpen && pnl <= -3) reasons.push('ขาดทุนหนัก');
+    return { t, pnl, isOpen, reasons };
+  }).filter(x => x.reasons.length > 0);
 
-  if (trades.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8"><div class="an-empty-state"><div class="an-empty-icon">📭</div><div class="an-empty-text">ไม่พบข้อมูลเทรด</div></div></td></tr>`;
+  flagged.sort((a,b) => {
+    if (a.isOpen !== b.isOpen) return a.isOpen ? -1 : 1;
+    return a.pnl - b.pnl;
+  });
+
+  const top = flagged.slice(0, 12);
+  if (!top.length) {
+    container.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:var(--an2-text3)">ไม่มีเทรดที่ต้องทบทวนตอนนี้ 🎉</div>';
     return;
   }
 
-  tbody.innerHTML = trades.map(t => {
-    const pnl = parseFloat(t.pnlPct)||0;
-    const pnlColor = pnl>0?'#10b981':pnl<0?'#f43f5e':'var(--text2)';
-    const grade = t.gradeFinal||t.grade||'—';
-    const gradeClass = grade==='A'?'an-pill-grade-a':grade==='B'?'an-pill-grade-b':grade==='C'?'an-pill-grade-c':'';
-    const wlClass = t.wl==='W'?'an-pill-win':t.wl==='L'?'an-pill-loss':'';
+  container.innerHTML = top.map(({t, pnl, reasons}) => {
     const dateStr = t.dateOpen ? new Date(t.dateOpen).toLocaleDateString('th-TH',{day:'2-digit',month:'short'}) : '—';
-    return `<tr>
-      <td style="padding:8px;color:var(--text2)">${dateStr}</td>
-      <td style="padding:8px;font-weight:700;color:var(--text)">${t.sym||'—'}</td>
-      <td style="padding:8px;color:${t.pos==='BUY'?'#10b981':'#f43f5e'};font-weight:600">${t.pos||'—'}</td>
-      <td style="padding:8px;color:var(--text2)">${t.session||'—'}</td>
-      <td style="padding:8px;color:var(--text2);font-size:11px">${(t.setup||'—').slice(0,30)}</td>
-      <td style="padding:8px"><span class="an-pill ${gradeClass}">${grade}</span></td>
-      <td style="padding:8px;text-align:right;font-weight:700;color:${pnlColor}">${pnl>=0?'+':''}${pnl.toFixed(1)}%</td>
-      <td style="padding:8px"><span class="an-pill ${wlClass}">${t.wl||'—'}</span></td>
-    </tr>`;
+    const posColor = t.pos === 'BUY' ? '#34d399' : '#f87171';
+    const pnlColor = pnl >= 0 ? '#34d399' : '#f87171';
+    const tagsHtml = reasons.map(r => `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--an2-warn-bg);color:var(--an2-warn-fg);white-space:nowrap">${r}</span>`).join('');
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--an2-border);flex-wrap:wrap">
+      <div style="min-width:55px;font-size:11px;color:var(--an2-text3);font-family:var(--font-mono)">${dateStr}</div>
+      <div style="min-width:75px;font-weight:700;font-size:13px;color:var(--an2-text)">${t.sym||'—'}</div>
+      <div style="min-width:36px;font-size:11px;color:${posColor};font-weight:600">${t.pos||'—'}</div>
+      <div style="flex:1;display:flex;gap:4px;flex-wrap:wrap;min-width:120px">${tagsHtml}</div>
+      <div style="min-width:55px;text-align:right;font-weight:700;font-size:13px;color:${pnlColor}">${pnl>0?'+':''}${pnl.toFixed(1)}%</div>
+    </div>`;
   }).join('');
 }
 
