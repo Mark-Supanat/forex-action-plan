@@ -1771,7 +1771,7 @@ select.field-sm option{background:#111827;color:var(--text)}
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
           <div class="dash-widget an-chart-widget">
-            <div class="dash-widget-title"><span class="an-chart-icon">📈</span>Monthly P&L (%)</div>
+            <div class="dash-widget-title"><span class="an-chart-icon">📈</span>Monthly P&L ($)</div>
             <div style="height:170px;position:relative"><canvas id="chartMonthly"></canvas></div>
           </div>
           <div class="dash-widget an-chart-widget">
@@ -1781,7 +1781,7 @@ select.field-sm option{background:#111827;color:var(--text)}
         </div>
 
         <div class="dash-widget" style="margin-top:14px">
-          <div class="dash-widget-title"><span class="an-chart-icon">💹</span>Equity Curve (Cumulative P&L %)</div>
+          <div class="dash-widget-title"><span class="an-chart-icon">💹</span>Equity Curve (Cumulative P&L $)</div>
           <div style="height:210px;position:relative">
             <canvas id="chartEquity"></canvas>
           </div>
@@ -2609,14 +2609,14 @@ function renderKPIs(trades) {
   const wins = trades.filter(t => t.wl === 'W').length;
   const wr = calcWinRate(trades);
   const pf = calcPF(trades);
-  const totalPnl = trades.reduce((s,t) => s + (parseFloat(t.pnlPct)||0), 0);
-  const avgPnl = trades.length ? (totalPnl/trades.length).toFixed(2) : 0;
-  const bestTrade = trades.reduce((b,t) => (parseFloat(t.pnlPct)||0) > (parseFloat(b.pnlPct)||0) ? t : b, trades[0]);
-  const worstTrade = trades.reduce((b,t) => (parseFloat(t.pnlPct)||0) < (parseFloat(b.pnlPct)||0) ? t : b, trades[0]);
+  const totalPnlUsd = trades.reduce((s,t) => s + (parseFloat(t.pnlUsd)||0), 0);
+  const totalPnlPct = trades.reduce((s,t) => s + (parseFloat(t.pnlPct)||0), 0);
+  const avgPnlUsd = trades.length ? (totalPnlUsd/trades.length).toFixed(2) : 0;
+  const bestTrade = trades.reduce((b,t) => (parseFloat(t.pnlUsd)||0) > (parseFloat(b.pnlUsd)||0) ? t : b, trades[0]);
+  const worstTrade = trades.reduce((b,t) => (parseFloat(t.pnlUsd)||0) < (parseFloat(b.pnlUsd)||0) ? t : b, trades[0]);
 
-  const wrGood = parseFloat(wr) >= 50;
   const pfGood = parseFloat(pf) >= 1 || pf === '∞';
-  const pnlGood = totalPnl >= 0;
+  const pnlGood = totalPnlUsd >= 0;
 
   document.getElementById('anKpiGrid').innerHTML = `
     <div class="an-kpi-card" style="--liquid-glow:rgba(59,130,246,.4)">
@@ -2628,13 +2628,13 @@ function renderKPIs(trades) {
       <div class="an-kpi-value">${trades.length}</div>
       <div class="an-kpi-sub">${wins}W / ${trades.length-wins}L</div>
     </div>
-    <div class="an-kpi-card" style="--liquid-glow:${wrGood?'rgba(16,185,129,.4)':'rgba(244,63,94,.4)'}">
-      <div class="an-kpi-accent" style="background:${wrGood?'linear-gradient(90deg,#10b981,#34d399)':'linear-gradient(90deg,#f43f5e,#fb7185)'}"></div>
+    <div class="an-kpi-card" style="--liquid-glow:rgba(59,130,246,.4)">
+      <div class="an-kpi-accent" style="background:linear-gradient(90deg,#3b82f6,#818cf8)"></div>
       <div class="an-kpi-top">
-        <div class="an-kpi-icon" style="background:${wrGood?'rgba(16,185,129,.15)':'rgba(244,63,94,.15)'}">🎯</div>
+        <div class="an-kpi-icon" style="background:rgba(59,130,246,.15)">🎯</div>
         <div class="an-kpi-label">Win Rate</div>
       </div>
-      <div class="an-kpi-value ${wrGood?'an-positive':'an-negative'}">${wr}%</div>
+      <div class="an-kpi-value" style="color:var(--text)">${wr}%</div>
       <div class="an-kpi-sub">${wins} wins</div>
     </div>
     <div class="an-kpi-card" style="--liquid-glow:${pfGood?'rgba(16,185,129,.4)':'rgba(244,63,94,.4)'}">
@@ -2652,8 +2652,8 @@ function renderKPIs(trades) {
         <div class="an-kpi-icon" style="background:${pnlGood?'rgba(16,185,129,.15)':'rgba(244,63,94,.15)'}">💰</div>
         <div class="an-kpi-label">Total P&L</div>
       </div>
-      <div class="an-kpi-value ${pnlGood?'an-positive':'an-negative'}">${totalPnl>=0?'+':''}${totalPnl.toFixed(1)}%</div>
-      <div class="an-kpi-sub">Avg ${avgPnl>0?'+':''}${avgPnl}% / trade</div>
+      <div class="an-kpi-value ${pnlGood?'an-positive':'an-negative'}">${totalPnlUsd>=0?'+':'-'}$${Math.abs(totalPnlUsd).toFixed(2)}</div>
+      <div class="an-kpi-sub">${totalPnlPct>=0?'+':''}${totalPnlPct.toFixed(1)}% · Avg ${avgPnlUsd>=0?'+':''}$${avgPnlUsd}/trade</div>
     </div>
     <div class="an-kpi-card" style="--liquid-glow:rgba(240,180,41,.4)">
       <div class="an-kpi-accent" style="background:linear-gradient(90deg,#f0b429,#fb923c)"></div>
@@ -2662,9 +2662,9 @@ function renderKPIs(trades) {
         <div class="an-kpi-label">Best / Worst</div>
       </div>
       <div class="an-kpi-value" style="font-size:16px">
-        <span class="an-positive">+${parseFloat(bestTrade?.pnlPct||0).toFixed(1)}%</span>
+        <span class="an-positive">+$${parseFloat(bestTrade?.pnlUsd||0).toFixed(2)}</span>
         <span style="color:var(--text3);font-size:12px"> / </span>
-        <span class="an-negative">${parseFloat(worstTrade?.pnlPct||0).toFixed(1)}%</span>
+        <span class="an-negative">-$${Math.abs(parseFloat(worstTrade?.pnlUsd||0)).toFixed(2)}</span>
       </div>
       <div class="an-kpi-sub">${bestTrade?.sym||'—'} / ${worstTrade?.sym||'—'}</div>
     </div>`;
@@ -2726,7 +2726,7 @@ function renderGradeChart(trades) {
   anCharts['chartGrade'] = new Chart(ctx, {
     type:'doughnut',
     data:{ labels:grades, datasets:[{ data, backgroundColor:['#10b981','#f0b429','#f43f5e'], borderWidth:0 }] },
-    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{ legend:{ position:'bottom', labels:{ color:'#6b7a9e', padding:12 } } } }
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%', rotation:-90, plugins:{ legend:{ position:'bottom', labels:{ color:'#6b7a9e', padding:12 } } } }
   });
 }
 
@@ -2738,16 +2738,16 @@ function renderMonthlyChart(trades) {
     if (isNaN(d)) return;
     const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
     if (!monthly[key]) monthly[key] = 0;
-    monthly[key] += parseFloat(t.pnlPct) || 0;
+    monthly[key] += parseFloat(t.pnlUsd) || 0;
   });
   const labels = Object.keys(monthly).sort();
-  const data = labels.map(k => parseFloat(monthly[k].toFixed(2)));
+  const data = labels.map(k => Math.round(monthly[k]*100)/100);
   const ctx = document.getElementById('chartMonthly');
   if (!ctx) return;
   anCharts['chartMonthly'] = new Chart(ctx, {
     type:'bar',
     data:{ labels, datasets:[{ data, backgroundColor: data.map(v => v>=0 ? '#10b981' : '#f43f5e'), borderRadius:6, maxBarThickness:44 }] },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ color:'#6b7a9e', callback:v=>v+'%' }, grid:{ color:'#1a2236' } }, x:{ ticks:{color:'#6b7a9e',maxRotation:45}, grid:{display:false} } } }
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw>=0?'+':'-'}$${Math.abs(c.raw).toFixed(2)}`}}}, scales:{ y:{ ticks:{ color:'#6b7a9e', callback:v=>'$'+v }, grid:{ color:'#1a2236' } }, x:{ ticks:{color:'#6b7a9e',maxRotation:45}, grid:{display:false} } } }
   });
 }
 
@@ -2779,10 +2779,13 @@ function renderEquityChart(trades) {
   const sorted = [...trades].filter(t=>t.dateOpen).sort((a,b) => new Date(a.dateOpen)-new Date(b.dateOpen));
   let cumulative = 0;
   const points = sorted.map(t => {
-    cumulative += parseFloat(t.pnlPct) || 0;
-    return cumulative;
+    cumulative += parseFloat(t.pnlUsd) || 0;
+    return Math.round(cumulative*100)/100;
   });
-  const labels = sorted.map((t,i) => i+1);
+  const labels = sorted.map(t => {
+    const d = new Date(t.dateOpen);
+    return isNaN(d) ? '—' : d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+  });
   const ctx = document.getElementById('chartEquity');
   if (!ctx) return;
   anCharts['chartEquity'] = new Chart(ctx, {
@@ -2794,12 +2797,12 @@ function renderEquityChart(trades) {
     }] },
     options:{ responsive:true, maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{
-        title:c=>`เทรดที่ ${c[0].label}`,
-        label:c=>`สะสม: ${c.raw>=0?'+':''}${c.raw.toFixed(1)}%`
+        title:c=>c[0].label,
+        label:c=>`สะสม: ${c.raw>=0?'+':'-'}$${Math.abs(c.raw).toFixed(2)}`
       }}},
       scales:{
-        y:{ ticks:{ color:'#6b7a9e', callback:v=>v+'%' }, grid:{ color:'#1a2236' } },
-        x:{ ticks:{ color:'#6b7a9e', maxTicksLimit:10 }, grid:{display:false}, title:{display:true,text:'ลำดับเทรด',color:'#6b7a9e',font:{size:10}} }
+        y:{ ticks:{ color:'#6b7a9e', callback:v=>'$'+v }, grid:{ color:'#1a2236' } },
+        x:{ ticks:{ color:'#6b7a9e', maxTicksLimit:10 }, grid:{display:false}, title:{display:true,text:'ช่วงเวลา',color:'#6b7a9e',font:{size:10}} }
       }
     }
   });
